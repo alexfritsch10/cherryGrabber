@@ -1,5 +1,5 @@
 from rplidar import RPLidar
-
+from time import time
 
 class LidarController:
 
@@ -7,38 +7,66 @@ class LidarController:
         # connect to the Lidar
         self.lidar = RPLidar(lidarPort)
 
-    def getDistances(self, startAngle:int=270, endAngle:int=90):
+    def getMeasurements(self, startDegree:int, endDegree:int, accuracyFactor:float=1.0) ->list[tuple[float, float]]:
         # Clear input before each scan
         self.lidar.clear_input()
 
-        # look at one scan and remove 'quality' entry in tuples
-        reducedScan = []
-        for scan in self.lidar.iter_scans():  
-            reducedScan = [element[1:] for element in scan]
-            break
-
-        
-        # measurements per 360° Scan: 193
-        degreeDelta = 360/len(reducedScan)
-
-        if startAngle < endAngle:
-            # in this case, the list does not cross the 0
-            startIdx = int(startAngle / degreeDelta)
-            endIdx = int(endAngle / degreeDelta)
-            print(startIdx)
-            print(endIdx)
-            print(reducedScan)
-
-            return reducedScan[startIdx:endIdx]
+        # check, if the measurements are crossing the degree 0°
+        crossesZero = startDegree > endDegree
+        if crossesZero:
+            measurementsLength = int((360 - startDegree + endDegree) * accuracyFactor)
         else:
-            # is this case, the list crosses the 0
-            scansLeft = int((360 - startAngle)/degreeDelta)
-            scansRight = int(endAngle/degreeDelta) 
+            measurementsLength = int((endDegree - startDegree) * accuracyFactor)
 
-            startToZero = reducedScan[-scansLeft:]
-            zeroToEnd = reducedScan[:scansRight]
+        print("Measurement length: %s" %measurementsLength)
 
-            return startToZero + zeroToEnd
+        # if crossesZero == True, both of these lists are used
+        measurements1 = []
+        measurements2 = []
+        startTime = time()
+
+        for measurement in self.lidar.iter_measurments():
+            # drop the first two entries --> degree and distance remain
+            measurement = measurement[2:]
+            relevant = self.measurementIsRelevant(measurement[0], startDegree, endDegree)
+            if relevant:
+                if crossesZero:
+                    print(measurement)
+                    if startDegree <= measurement[0] <= 360:
+                        measurements1.append(measurement)
+                    else:
+                        measurements2.append(measurement)
+                else:
+                    measurements1.append(measurement)
+            
+            # stop the scan as soon as all the values are collected
+            if len(measurements1) + len(measurements2) > measurementsLength:
+                timeElapsed = time()-startTime
+                print("Time Elapsed: %s" %timeElapsed)
+                print(len(measurements1))
+                print(len(measurements2))
+                break
+        
+        measurements = self.sortCleanAndMergeMeasurements(measurements1, measurements2)
+        return measurements
+
+    def measurementIsRelevant(self, degree:float, startDegree:int, endDegree:int) -> bool:
+        if startDegree < endDegree:
+            # scan does NOT cross the degree 0°
+            if startDegree <= degree <= endDegree:
+                return True
+        else:
+            # scan does cross the degree 0°
+            if degree >= startDegree or degree <= endDegree:
+                return True
+        return False
+    
+    def sortCleanAndMergeMeasurements(self, measurements1:list, measurements2:list) -> list[tuple[float, float]]:
+        # delete invalid measurements
+        measurements1 = [tup for tup in measurements1 if tup[1] != 0.0]
+        measurements2 = [tup for tup in measurements2 if tup[1] != 0.0]
+
+        return sorted(measurements1, key=lambda x: x[0]) + sorted(measurements2, key=lambda x: x[0]) 
 
     def getMinDistance(self, distances:list) -> tuple[int, int]:
         return min(distances, key=self.getSecondElement)
@@ -52,7 +80,8 @@ class LidarController:
         self.lidar.disconnect()
 
 
-
 lidar = LidarController()
-print(lidar.getDistances(10, 15))
+measurements = lidar.getMeasurements(270, 90, 2)
+print(measurements)
+print(lidar.getMinDistance(measurements))
 lidar.clearLidar()
