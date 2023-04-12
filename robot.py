@@ -32,9 +32,9 @@ while(True):
         currentSpeed = motors.currentSpeed
         # get measurements from 340 to 20 degree with a time limit of 0.5 seconds
         measurements = lidar.getMeasurements(340, 20, 0.5)
-        distance = lidar.getMinDistance(measurements)
+        _, distance = lidar.getDegreeForMinDistance(measurements)
         imageWidth = camera.camera.resolution[0]
-        command, angle = calculateNextCommand(currentSpeed, distance[1], imageWidth, xCoordCherry)
+        command, angle = calculateNextCommand(currentSpeed, distance, imageWidth, xCoordCherry)
         logCommand(command, angle)
         
         if command == "forward":
