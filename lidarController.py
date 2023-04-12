@@ -7,7 +7,7 @@ class LidarController:
         # connect to the Lidar
         self.lidar = RPLidar(lidarPort)
 
-    def getMeasurements(self, startDegree:int, endDegree:int, timeLimitSeconds:float=1.0) ->list[tuple[float, float]]:
+    def getMeasurements(self, startDegree:int, endDegree:int, timeLimit:float=1.0) ->list[tuple[float, float]]:
         # possiblity to limit the time of a scan
         startTime = time()
         
@@ -26,7 +26,7 @@ class LidarController:
                 measurements.append(measurement)
 
             # stop the scan as soon as time limit is reached
-            if time() - startTime >= timeLimitSeconds:
+            if time() - startTime >= timeLimit:
                 print("Time Limit Reached")
                 break
         
