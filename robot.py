@@ -34,7 +34,7 @@ while(True):
         measurements = lidar.getMeasurements(340, 20, 0.5)
         distance = lidar.getMinDistance(measurements)
         imageWidth = camera.camera.resolution[0]
-        command, angle = calculateNextCommand(currentSpeed, distance, imageWidth, xCoordCherry)
+        command, angle = calculateNextCommand(currentSpeed, distance[1], imageWidth, xCoordCherry)
         logCommand(command, angle)
         
         if command == "forward":
