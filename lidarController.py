@@ -50,7 +50,7 @@ class LidarController:
 
         return sorted(measurements, key=lambda x: x[0]) 
 
-    def getMinDistance(self, distances:list) -> tuple[int, int]:
+    def getDegreeForMinDistance(self, distances:list) -> tuple[int, int]:
         return min(distances, key=self.getSecondElement)
 
     def getSecondElement(self, tupleItem:tuple) -> float:
