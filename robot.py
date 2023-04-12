@@ -1,6 +1,6 @@
 from motorController import MotorController
 from cameraController import CameraController
-from sonicController import SonicController
+from lidarController import LidarController
 from utils import calculateNextCommand, logCommand
 from cherryFinder import CherryFinder
 
@@ -8,8 +8,8 @@ motors = MotorController()
 print("Motor Setup Complete")
 camera = CameraController()
 print("Camera Setup Complete")
-sonic = SonicController()
-print("Sonic Setup Complete")
+lidar = LidarController()
+print("Lidar Setup Complete")
 cherryFinder = CherryFinder()
 
 # if this is set to True, the image will be cropped to the
@@ -30,7 +30,9 @@ while(True):
     
     if found:
         currentSpeed = motors.currentSpeed
-        distance = sonic.calculateDistance()
+        # get measurements from 340 to 20 degree with a time limit of 0.5 seconds
+        measurements = lidar.getMeasurements(340, 20, 0.5)
+        distance = lidar.getMinDistance(measurements)
         imageWidth = camera.camera.resolution[0]
         command, angle = calculateNextCommand(currentSpeed, distance, imageWidth, xCoordCherry)
         logCommand(command, angle)
